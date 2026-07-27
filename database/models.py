@@ -1,9 +1,9 @@
 """Modelos SQLAlchemy del MVP.
 
-Ver paquitobot-plan.md para el esquema completo. Por ahora se modelan
-alumnos, cursos, horarios, la matrícula (alumno <-> curso) y la
-vinculación chat_id <-> alumno. Los `otp_codigos` y `recordatorios`
-se agregarán en un paso posterior del plan.
+Ver paquitobot-plan.md para el esquema completo. Se modelan alumnos,
+cursos, horarios, la matrícula (alumno <-> curso), la vinculación
+chat_id <-> alumno y los códigos OTP usados para verificar esa
+vinculación. Los `recordatorios` se agregarán en un paso posterior.
 """
 
 from datetime import datetime, timezone
@@ -80,13 +80,34 @@ class Matricula(Base):
 
 
 class Vinculacion(Base):
-    """chat_id de Telegram <-> alumno. Se crea al usar /vincular."""
+    """chat_id de Telegram <-> alumno. Se crea al validar el OTP."""
 
     __tablename__ = "vinculaciones"
 
     id = Column(Integer, primary_key=True)
     chat_id = Column(BigInteger, unique=True, nullable=False, index=True)
     alumno_id = Column(Integer, ForeignKey("alumnos.id"), nullable=False)
-    fecha_vinculacion = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    fecha_vinculacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     alumno = relationship("Alumno", back_populates="vinculacion")
+
+
+class OtpCodigo(Base):
+    """Código OTP pendiente de validación para vincular chat_id <-> alumno.
+
+    Se crea al pedir el código de alumno en /vincular y se envía por
+    Resend al correo institucional. Se borra al validarse, expirar o
+    agotar los intentos.
+    """
+
+    __tablename__ = "otp_codigos"
+
+    id = Column(Integer, primary_key=True)
+    chat_id = Column(BigInteger, nullable=False, index=True)
+    alumno_id = Column(Integer, ForeignKey("alumnos.id"), nullable=False)
+    codigo = Column(String(6), nullable=False)
+    expira_en = Column(DateTime(timezone=True), nullable=False)
+    intentos_fallidos = Column(Integer, default=0, nullable=False)
+    creado_en = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    alumno = relationship("Alumno")
