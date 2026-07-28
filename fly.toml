@@ -1,13 +1,18 @@
+# fly.toml — configurado como worker de long polling.
+#
+# A propósito NO se define [http_service] ni [[services]]: el bot solo
+# hace conexiones salientes a Telegram y no expone ningún puerto HTTP.
+# Un fly.toml generado por "Fly Launch" agrega [http_service] con
+# internal_port = 8080 por defecto, lo que hace que Fly intente un
+# health-check HTTP contra un puerto que nunca escucha, causando el
+# crash loop ("instance refused connection" / "exhausted its maximum
+# restart attempts"). Ver https://fly.io/docs/reference/configuration/
+
 app = "paquitobot"
 primary_region = "gru"
 
 [build]
 
-# El bot usa long polling: solo hace conexiones salientes a Telegram y
-# no expone ningún puerto HTTP. A propósito NO se define [http_service]
-# ni [[services]], para que Fly no intente hacer health-check/proxy a
-# un puerto que nunca va a estar escuchando (esa era la causa de los
-# reinicios y de "instance refused connection").
 [processes]
   app = "python main.py"
 
