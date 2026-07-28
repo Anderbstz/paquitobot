@@ -1,0 +1,19 @@
+app = "paquitobot"
+primary_region = "gru"
+
+[build]
+
+# El bot usa long polling: solo hace conexiones salientes a Telegram y
+# no expone ningún puerto HTTP. A propósito NO se define [http_service]
+# ni [[services]], para que Fly no intente hacer health-check/proxy a
+# un puerto que nunca va a estar escuchando (esa era la causa de los
+# reinicios y de "instance refused connection").
+[processes]
+  app = "python main.py"
+
+[env]
+  PYTHONUNBUFFERED = "1"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1024mb"
